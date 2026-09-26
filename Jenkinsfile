@@ -52,7 +52,7 @@ pipeline {
                    URL Build: ${env.BUILD_URL}
                    Detalles de Pruebas: ${env.BUILD_URL}testReport/
                """,
-               to: 'tu-email@example.com' // Reemplaza con tu email
+               to: 'felipe.velez@ucp.edu.co' // Reemplaza con tu email
            )
        }
    }
