@@ -4,7 +4,7 @@ pipeline {
 
    tools {
        nodejs 'Node_24'  // Configurado en Global Tool Configuration
-       sonarScanner 'SonarQubeScanner'
+       'hudson.plugins.sonar.SonarRunnerInstallation' 'SonarQubeScanner'
    }
    environment {
         SONAR_PROJECT_KEY = 'ucp-app-react'
