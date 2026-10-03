@@ -110,6 +110,30 @@ pipeline {
            )
 
 
+           // Notificación por Telegram (token y chat id guardados como credenciales)
+           script {
+               def iconos = [SUCCESS: '✅', UNSTABLE: '⚠️', FAILURE: '❌', ABORTED: '⏹️']
+               def mensaje = """${iconos.get(currentBuild.currentResult, 'ℹ️')} <b>Pipeline ${currentBuild.currentResult}</b>
+Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Duración: ${currentBuild.durationString.replace(' and counting', '')}
+<a href="${env.BUILD_URL}">Ver build</a> | <a href="${env.BUILD_URL}testReport/">Pruebas</a> | <a href="${env.BUILD_URL}console">Consola</a>"""
+               withEnv(["TG_MSG=${mensaje}"]) {
+                   withCredentials([
+                       string(credentialsId: 'telegram-bot-token', variable: 'TG_TOKEN'),
+                       string(credentialsId: 'telegram-chat-id', variable: 'TG_CHAT_ID')
+                   ]) {
+                       sh '''
+                           curl -s -o /dev/null -w "Telegram HTTP %{http_code}\\n" \
+                               -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+                               --data-urlencode "chat_id=${TG_CHAT_ID}" \
+                               --data-urlencode "parse_mode=HTML" \
+                               --data-urlencode "text=${TG_MSG}" || true
+                       '''
+                   }
+               }
+           }
+
+
            // Limpiar workspace
            cleanWs()
        }
