@@ -17,6 +17,16 @@ pipeline {
                git branch: 'main', url: 'https://github.com/feanve/ucp-app-react.git'
            }
        }
+
+        // Etapa 2: Instalar dependencias y build del proyecto
+       stage('Build') {
+           steps {
+               sh 'npm install'
+               sh 'npm run build'
+               sh 'npm run test:coverage' // Asegúrate de que tu package.json tenga este script
+           }
+       }
+       
        // Nueva etapa: Análisis de SonarQube
         stage('SonarQube Analysis') {
             steps {
@@ -42,15 +52,6 @@ pipeline {
                 }
             }
         }
-
-       // Etapa 2: Instalar dependencias y build del proyecto
-       stage('Build') {
-           steps {
-               sh 'npm install'
-               sh 'npm run build'
-               sh 'npm run test:coverage' // Asegúrate de que tu package.json tenga este script
-           }
-       }
 
 
        // Etapa 3: Pruebas paralelizadas (cada rama genera su propio reporte JUnit)
