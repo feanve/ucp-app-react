@@ -4,7 +4,6 @@ pipeline {
 
    tools {
        nodejs 'Node_24'  // Configurado en Global Tool Configuration
-       'hudson.plugins.sonar.SonarRunnerInstallation' 'MySonarQube'
    }
    environment {
         SONAR_PROJECT_KEY = 'ucp-app-react'
@@ -21,16 +20,25 @@ pipeline {
        // Nueva etapa: Análisis de SonarQube
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''sonar-scanner \
-                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                    -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                    -Dsonar.sources=src \
-                    -Dsonar.host.url=http://localhost:9000 \
-                    -Dsonar.login=${SONAR_AUTH_TOKEN} \
-                    -Dsonar.javascript.node=${NODEJS_HOME}/bin/node \
-                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-                    '''
+                 script {
+                    def scannerHome = tool 'MySonarQube'
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.projectName='${SONAR_PROJECT_NAME}' \
+                            -Dsonar.sources=src \
+                            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -105,12 +113,6 @@ pipeline {
 
    post {
        always {
-            script {
-                def qg = waitForQualityGate()
-                    if (qg.status != 'OK') {
-                    error "Calidad no aprobada: ${qg.status}"
-                }
-            }
            // Publicar el build desplegado como reporte HTML
            publishHTML target: [
                allowMissing: true,
