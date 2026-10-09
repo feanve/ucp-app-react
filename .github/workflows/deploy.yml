@@ -1,0 +1,47 @@
+name: CI/CD - Deploy to Vercel
+
+# Se ejecuta en cada push a main (y se puede lanzar a mano desde la pestaña Actions)
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read      # Necesario para hacer checkout del código
+      deployments: write  # Permite registrar el despliegue en GitHub
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      # 1. Descarga el código del commit que disparó el workflow
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Instala Node.js en el runner
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Instala las dependencias del proyecto
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Ejecuta las pruebas unitarias; si fallan, no se despliega
+      - name: Run tests
+        run: npm test -- --watchAll=false --ci
+
+      # 5. Compila la app para verificar que el build de producción funciona
+      - name: Build project
+        run: npm run build
+
+      # 6. Descarga la configuración del proyecto en Vercel
+      - name: Pull Vercel Environment Information
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      # 7. Despliega a producción en Vercel
+      - name: Deploy Project to Vercel
+        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
