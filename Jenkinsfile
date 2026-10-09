@@ -27,6 +27,22 @@ pipeline {
            }
        }
        
+       // Escaneo de seguridad de dependencias con Snyk
+       // Si hay vulnerabilidades de severidad alta o crítica, el build queda
+       // UNSTABLE (no FAILURE) para que el pipeline continúe y deje el reporte
+       stage('Security Scan with Snyk') {
+           steps {
+               catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                   snykSecurity(
+                       snykInstallation: 'snyk@latest',  // Configurado en Tools
+                       snykTokenId: 'SNYK_API_TOKEN',    // Credencial tipo "Snyk API token"
+                       severity: 'high',                 // Umbral: solo high y critical cuentan como falla
+                       failOnIssues: true
+                   )
+               }
+           }
+       }
+
        // Nueva etapa: Análisis de SonarQube
         stage('SonarQube Analysis') {
             steps {
